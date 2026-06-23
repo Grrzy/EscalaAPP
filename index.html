@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EscalaApp - Gestão de Colaboradores</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <h1>EscalaApp</h1>
+            <span class="versao">v1.1 Operacional</span>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <aside class="sidebar">
+            <nav>
+                <p class="menu-titulo">Menu Principal</p>
+                <button id="btn-nav-cadastro" onclick="mostrarSessao('cadastro')" class="nav-btn ativa">Novo Funcionário</button>
+                <button id="btn-nav-atualizar" onclick="mostrarSessao('atualizar')" class="nav-btn">Atualizar Dados</button>
+                
+                <p class="menu-titulo">Operação e Escalas</p>
+                <button id="btn-nav-criar-escala" onclick="mostrarSessao('criar-escala')" class="nav-btn">Criar/Alterar Escala</button>
+                <button id="btn-nav-lista" onclick="mostrarSessao('lista')" class="nav-btn">Lista e Calendários</button>
+                <button id="btn-nav-cobertura" onclick="mostrarSessao('cobertura')" class="nav-btn">Cobertura por Hora</button>
+                
+                <p class="menu-titulo">Gestão de Ponto</p>
+                <button id="btn-nav-faltas" onclick="mostrarSessao('faltas')" class="nav-btn">Registrar Falta</button>
+                
+                <hr class="divisor-menu">
+                
+                <button onclick="exportarJSON()" class="nav-btn btn-exportar">Salvar Backup (JSON)</button>
+            </nav>
+        </aside>
+
+        <main class="conteudo-principal">
+            
+            <section id="cadastro" class="sessao ativa">
+                <h2>Registrar Novo Funcionário</h2>
+                <form id="form-cadastro">
+                    <label>ID / Matrícula:</label>
+                    <input type="text" id="func-id" required>
+                    <label>Nome Completo:</label>
+                    <input type="text" id="func-nome" required>
+                    <label>Grupo de Rotação (A Rotação de Plantões é Automática):</label>
+                    <select id="func-grupo" required>
+                        <option value="A">Grupo A</option>
+                        <option value="B">Grupo B</option>
+                        <option value="C">Grupo C</option>
+                        <option value="D">Grupo D</option>
+                        <option value="E">Grupo E</option>
+                        <option value="F">Grupo F</option>
+                    </select>
+                    <label>Horário de Entrada Padrão (Pontas: 06:00, 08:00, 14:00, 16:00, 23:00):</label>
+                    <input type="time" id="func-entrada" required>
+                    <label>Horário de Saída Padrão:</label>
+                    <input type="time" id="func-saida" required>
+                    <button type="submit" class="btn-dourado">Salvar Funcionário</button>
+                </form>
+                <div id="auditoria-grupos-container" class="painel-auditoria">
+                    <h3 style="color: var(--dourado); margin-bottom: 10px; font-size: 16px;">Auditoria de Contratação por Turno</h3>
+                    <p style="font-size: 12px; margin-bottom: 15px; opacity: 0.8;">O sistema exige no mínimo 2 pessoas logadas simultaneamente nos horários de ponta (06h e 23h).</p>
+                    <div id="tabela-auditoria-grupos"></div>
+                </div>
+            </section>
+
+            <section id="atualizar" class="sessao">
+                <h2>Atualizar Dados de Funcionário</h2>
+                <div class="campo-filtro">
+                    <label>Buscar Funcionário para Editabilidade:</label>
+                    <input type="text" id="busca-atualizar" placeholder="Digite nome ou ID para buscar..." oninput="filtrarBuscaAtualizar()">
+                    <ul id="resultado-busca-atualizar" class="lista-suspensa"></ul>
+                </div>
+                <form id="form-atualizar" style="display: none; margin-top: 20px;">
+                    <input type="hidden" id="edit-id-original">
+                    <label>Nome Completo:</label>
+                    <input type="text" id="edit-nome" required>
+                    <label>Grupo de Rotação:</label>
+                    <select id="edit-grupo" required>
+                        <option value="A">Grupo A</option>
+                        <option value="B">Grupo B</option>
+                        <option value="C">Grupo C</option>
+                        <option value="D">Grupo D</option>
+                        <option value="E">Grupo E</option>
+                        <option value="F">Grupo F</option>
+                    </select>
+                    <label>Horário de Entrada Padrão:</label>
+                    <input type="time" id="edit-entrada" required>
+                    <label>Horário de Saída Padrão:</label>
+                    <input type="time" id="edit-saida" required>
+                    <button type="submit" class="btn-dourado">Atualizar Informações</button>
+                </form>
+            </section>
+
+            <section id="criar-escala" class="sessao">
+                <h2>Gestão de Trocas e Coberturas</h2>
+                <div class="campo-filtro">
+                    <label>Escolha o Mês/Ano de Planejamento:</label>
+                    <input type="month" id="escala-mes-ano" onchange="renderizarCalendarioCriacao()">
+                </div>
+                <div id="calendario-criacao-container" style="display: none; margin-top: 20px;">
+                    <div class="dias-semana">
+                        <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                    </div>
+                    <div id="calendario-criacao-grid"></div>
+                    <div id="painel-atribuicao" style="display: none; margin-top: 20px; padding: 15px; border: 1px solid var(--dourado); border-radius: 5px;">
+                        <h3 id="titulo-atribuicao-dia" style="color: var(--dourado);"></h3>
+                        <p style="font-size: 12px; margin-bottom: 10px; color: #ffbc42;">⚠️ Validação de Compliance Ativa: Limite de dias trabalhados, Interjornada de 11h, Pico Seg/Ter e Cobertura 24/7.</p>
+                        <form id="form-atribuir-escala">
+                            <label>Selecionar Colaborador Substituto / Troca:</label>
+                            <select id="atribuir-func-select" required></select>
+                            <label>Novo Horário de Entrada (se trabalhar):</label>
+                            <input type="time" id="atribuir-entrada">
+                            <label>Novo Horário de Saída (se trabalhar):</label>
+                            <input type="time" id="atribuir-saida">
+                            <label style="display: flex; align-items: center; gap: 10px; margin-top: 10px; cursor: pointer;">
+                                <input type="checkbox" id="atribuir-folga-checkbox" style="width: 20px; height: 20px;">
+                                <strong>Definir dia como FOLGA MANUAL para este colaborador</strong>
+                            </label>
+                            <button type="submit" class="btn-dourado">Validar e Aplicar no Sistema</button>
+                        </form>
+                        <div id="lista-atribuídos-dia" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="cobertura" class="sessao">
+                <h2>Aba Analítica: Cobertura por Hora</h2>
+                <div class="campo-filtro">
+                    <label>Selecione a Data para Auditoria de Volumetria:</label>
+                    <input type="date" id="cobertura-data" onchange="renderizarCoberturaHora()">
+                </div>
+                <div id="cobertura-resultado" style="margin-top: 20px;">
+                    <p style="opacity:0.6; font-style:italic;">Selecione uma data acima para mapear as faixas de atendimento.</p>
+                </div>
+            </section>
+
+            <section id="lista" class="sessao">
+                <h2>Frequência Mensal do Quadro</h2>
+                <div class="filtros-container">
+                    <div class="campo-filtro">
+                        <label>Mês e Ano de Referência:</label>
+                        <input type="month" id="filtro-mes-ano" onchange="aoMudarMesAnoLista()">
+                    </div>
+                    <button onclick="exportarParaExcel()" class="btn-dourado" style="align-self: flex-end; height: 42px;">Baixar Excel Analítico</button>
+                </div>
+                <div id="calendario-lista-container" style="display: none; margin-top: 20px;">
+                    <h3 id="calendario-lista-titulo" style="color: var(--dourado); text-align: center; margin-bottom: 10px;"></h3>
+                    <div class="dias-semana">
+                        <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                    </div>
+                    <div id="calendario-lista-grid"></div>
+                </div>
+
+                <div id="detalhes-dia-container" style="display: none; margin-top: 25px; padding: 20px; background-color: var(--verde-fundo); border-radius: 5px; border-left: 4px solid var(--dourado);">
+                    <h3 id="detalhes-dia-titulo" style="color: var(--dourado); margin-bottom: 15px;"></h3>
+                    
+                    <div class="controles-tabela" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <input type="text" id="filtro-tabela-dia" placeholder="🔎 Buscar colaborador por Nome ou ID..." oninput="renderizarTabelaDia()" style="flex: 1; min-width: 250px;">
+                        
+                        <select id="ordenar-tabela-dia" onchange="renderizarTabelaDia()" style="width: auto; min-width: 200px;">
+                            <option value="grupo">Organizar por: Grupo (A-F)</option>
+                            <option value="nome">Organizar por: Nome (A-Z)</option>
+                            <option value="id_asc">Organizar por: Matrícula (Crescente)</option>
+                            <option value="id_desc">Organizar por: Matrícula (Decrescente)</option>
+                            <option value="status">Organizar por: Status (Plantão Prioritário)</option>
+                        </select>
+                    </div>
+
+                    <table id="tabela-funcionarios-dia">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Grupo</th>
+                                <th>Status/Turno</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="faltas" class="sessao">
+                <h2>Registrar Ausência Não Comunicada (Falta)</h2>
+                <form id="form-falta">
+                    <label>Buscar por Nome ou ID:</label>
+                    <input type="text" id="busca-func" placeholder="Digite para buscar..." required>
+                    <ul id="resultado-busca" class="lista-suspensa"></ul>
+                    <input type="hidden" id="falta-id-selecionado">
+                    <label>Data da Ausência:</label>
+                    <input type="date" id="data-falta" required>
+                    <button type="submit" class="btn-dourado">Gravar Falta Injustificada</button>
+                </form>
+            </section>
+
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

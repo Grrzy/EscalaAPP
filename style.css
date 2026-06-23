@@ -1,0 +1,312 @@
+:root {
+    --verde-fundo: #0A1C12;
+    --verde-painel: #133321;
+    --verde-claro: #1F4D33;
+    --dourado: #D4AF37;
+    --dourado-hover: #F1C40F;
+    --texto: #E8F5E9;
+    --erro: #E74C3C;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Trava o scroll da página inteira para criar efeito de App */
+body {
+    background-color: var(--verde-fundo);
+    color: var(--texto);
+    display: flex;
+    flex-direction: column;
+    height: 100vh; 
+    overflow: hidden; 
+}
+
+/* --- BARRA SUPERIOR --- */
+header {
+    background-color: var(--verde-painel);
+    padding: 15px 30px;
+    border-bottom: 2px solid var(--dourado);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.logo-container {
+    display: flex;
+    align-items: baseline;
+    gap: 15px;
+}
+
+header h1 {
+    color: var(--dourado);
+    font-size: 24px;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.versao {
+    font-size: 12px;
+    color: var(--verde-claro);
+    font-weight: bold;
+    background: #0d2618;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+/* --- ESTRUTURA DASHBOARD (Menu + Centro) --- */
+.dashboard-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden; /* Mantém os painéis no limite da tela */
+}
+
+/* MENU LATERAL */
+.sidebar {
+    width: 260px;
+    background-color: #0d2618; /* Verde bem escuro para diferenciar do fundo */
+    border-right: 1px solid var(--verde-claro);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.menu-titulo {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--dourado);
+    opacity: 0.7;
+    margin: 15px 20px 5px 20px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.nav-btn {
+    background: transparent;
+    color: var(--texto);
+    border: none;
+    border-left: 4px solid transparent;
+    padding: 12px 20px;
+    text-align: left;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.nav-btn:hover {
+    background-color: var(--verde-painel);
+}
+
+.nav-btn.ativo {
+    background-color: var(--verde-painel);
+    border-left: 4px solid var(--dourado);
+    color: var(--dourado);
+    font-weight: bold;
+}
+
+.divisor-menu {
+    border: 0;
+    height: 1px;
+    background-color: var(--verde-claro);
+    margin: 15px 20px;
+}
+
+.btn-exportar {
+    color: #a4c9b3;
+    font-style: italic;
+}
+
+.btn-exportar:hover {
+    color: var(--dourado);
+}
+
+/* CONTEÚDO CENTRAL */
+.conteudo-principal {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto; /* A rolagem acontece APENAS aqui no meio */
+    background-color: var(--verde-fundo);
+}
+
+.sessao {
+    display: none;
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: var(--verde-painel);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+
+.sessao.ativa {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- ESTILOS DE FORMULÁRIO E TABELAS (Mantidos do anterior) --- */
+h2 {
+    color: var(--dourado);
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--verde-claro);
+    padding-bottom: 10px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+input, select {
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--verde-claro);
+    background-color: var(--verde-fundo);
+    color: var(--texto);
+    font-size: 15px;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--dourado);
+}
+
+.btn-dourado {
+    background-color: var(--dourado);
+    color: var(--verde-fundo);
+    border: none;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.2s;
+    margin-top: 10px;
+}
+
+.btn-dourado:hover {
+    background-color: var(--dourado-hover);
+}
+
+.filtros-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: flex-end;
+}
+
+.campo-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+}
+
+/* CALENDÁRIO */
+.dias-semana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    font-weight: bold;
+    text-align: center;
+    color: var(--dourado);
+    margin-bottom: 5px;
+}
+
+#calendario-criacao-grid, #calendario-lista-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.dia {
+    padding: 15px 5px;
+    text-align: center;
+    background-color: var(--verde-claro);
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    user-select: none;
+    border: 1px solid transparent;
+}
+
+.dia:hover {
+    border: 1px solid var(--dourado);
+}
+
+.dia.selecionado {
+    border: 2px solid var(--dourado) !important;
+    background-color: #296643;
+}
+
+.dia.fim-semana {
+    background-color: #050d08;
+    color: #718679;
+}
+
+.dia.folga { opacity: 0.6; }
+.dia.falta { background-color: var(--erro) !important; color: white !important; }
+.dia-vazio { background-color: transparent !important; cursor: default; }
+
+.lista-suspensa {
+    list-style: none;
+    background: var(--verde-claro);
+    max-height: 150px;
+    overflow-y: auto;
+    border-radius: 4px;
+}
+
+.lista-suspensa li {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--verde-fundo);
+}
+
+.lista-suspensa li:hover {
+    background-color: var(--verde-fundo);
+    color: var(--dourado);
+}
+
+.painel-auditoria {
+    margin-top: 30px; 
+    padding: 15px; 
+    background: var(--verde-fundo); 
+    border-radius: 5px; 
+    border: 1px dashed var(--dourado);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+table th, table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--verde-claro);
+}
+
+table th {
+    color: var(--dourado);
+    background-color: var(--verde-fundo);
+}
