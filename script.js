@@ -19,7 +19,8 @@ window.onload = function() {
     if(document.getElementById('filtro-mes-ano')) document.getElementById('filtro-mes-ano').value = `${ano}-${mes}`;
     if(document.getElementById('cobertura-data')) document.getElementById('cobertura-data').value = `${ano}-${mes}-${dia}`;
     
-    atualizarTabelaAuditoriaGrupos();
+    // Inicia carregando o calendário automaticamente
+    renderizarCalendarioLista();
 };
 
 function mostrarSessao(idSessao) {
@@ -41,6 +42,49 @@ function salvarTodosDados() {
     localStorage.setItem('escalaApp_v10', JSON.stringify(appDados));
 }
 
+// ============================================================================
+// NOVO: SISTEMA DE IMPORTAÇÃO E EXPORTAÇÃO (JSON/API FileReader)
+// ============================================================================
+function exportarJSON() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appDados, null, 2));
+    const link = document.createElement('a'); 
+    link.href = dataStr; 
+    link.download = "escalaapp_backup_dados.json"; 
+    link.click();
+}
+
+function importarJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const dadosImportados = JSON.parse(e.target.result);
+            
+            // Validação simples para ver se o arquivo é realmente do sistema
+            if (dadosImportados.funcionarios && typeof dadosImportados.escalas === 'object') {
+                appDados = dadosImportados;
+                salvarTodosDados();
+                alert('Dados importados e sincronizados com sucesso! O sistema será recarregado.');
+                location.reload(); // Recarrega a aplicação para aplicar os novos dados
+            } else {
+                alert('Erro: O arquivo importado não possui a estrutura correta do EscalaApp.');
+            }
+        } catch (error) {
+            alert('Erro ao tentar ler o arquivo JSON: O arquivo pode estar corrompido.');
+        }
+    };
+    reader.readAsText(file);
+    
+    // Reseta o valor do input para permitir selecionar o mesmo arquivo mais de uma vez se necessário
+    event.target.value = '';
+}
+
+
+// ============================================================================
+// RESTANTE DO CÓDIGO OPERACIONAL
+// ============================================================================
 function shiftCoversHour(entrada, saida, horaAlvo) {
     if (!entrada || !saida) return false;
     let e = parseInt(entrada.split(':')[0]);
@@ -439,7 +483,6 @@ function renderizarCalendarioLista() {
     }
 }
 
-// --- NOVO SISTEMA DE TABELA COM FILTROS E ORDENAÇÃO ---
 function exibirTrabalhadoresDoDia(dataStr, elementoDiv) {
     document.querySelectorAll('#calendario-lista-grid .dia').forEach(d => d.classList.remove('selecionado'));
     if(elementoDiv) elementoDiv.classList.add('selecionado');
@@ -448,9 +491,7 @@ function exibirTrabalhadoresDoDia(dataStr, elementoDiv) {
     const [ano, mes, dia] = dataStr.split('-');
     document.getElementById('detalhes-dia-titulo').innerText = `Quadro Ativo no Turno: ${dia}/${mes}/${ano}`;
 
-    // Limpa a busca ao trocar de dia para não confundir o usuário
     document.getElementById('filtro-tabela-dia').value = '';
-    
     document.getElementById('detalhes-dia-container').style.display = 'block';
     renderizarTabelaDia();
 }
@@ -463,73 +504,48 @@ function renderizarTabelaDia() {
     const tbody = document.querySelector('#tabela-funcionarios-dia tbody');
     tbody.innerHTML = '';
 
-    // 1. Aplica o Filtro de Busca por Nome/ID
     let funcionariosFiltrados = appDados.funcionarios.filter(f => {
         return f.nome.toLowerCase().includes(termoBusca) || f.id.toLowerCase().includes(termoBusca);
     });
 
-    // 2. Aplica a Ordenação (Com Lógica de Desempate Múltiplo)
     funcionariosFiltrados.sort((a, b) => {
-        
-        // ORDENAÇÃO POR GRUPO
         if (tipoOrdenacao === 'grupo') {
-            if (a.grupo === b.grupo) return a.nome.localeCompare(b.nome); // Desempata pelo nome
+            if (a.grupo === b.grupo) return a.nome.localeCompare(b.nome);
             return a.grupo.localeCompare(b.grupo);
         }
-        
-        // ORDENAÇÃO POR NOME
-        if (tipoOrdenacao === 'nome') {
-            return a.nome.localeCompare(b.nome);
-        }
-        
-        // ORDENAÇÃO POR MATRÍCULA
+        if (tipoOrdenacao === 'nome') return a.nome.localeCompare(b.nome);
         if (tipoOrdenacao === 'id_asc') {
             const idA = parseInt(a.id);
             const idB = parseInt(b.id);
-            if (!isNaN(idA) && !isNaN(idB)) return idA - idB; // Caso sejam números
-            return a.id.localeCompare(b.id); // Caso sejam letras (EX: A001)
+            if (!isNaN(idA) && !isNaN(idB)) return idA - idB;
+            return a.id.localeCompare(b.id);
         }
-        
         if (tipoOrdenacao === 'id_desc') {
             const idA = parseInt(a.id);
             const idB = parseInt(b.id);
             if (!isNaN(idA) && !isNaN(idB)) return idB - idA;
             return b.id.localeCompare(a.id);
         }
-
-        // ORDENAÇÃO INTELIGENTE POR STATUS (Quem trabalha aparece primeiro)
         if (tipoOrdenacao === 'status') {
             const infoA = obterStatusDiaColaborador(a, dataSelecionadaLista);
             const infoB = obterStatusDiaColaborador(b, dataSelecionadaLista);
-            
-            // Pesos: 1 para quem está ativo, 2 para quem faltou, 3 para quem está de folga
             const pesos = { 'trabalho': 1, 'falta': 2, 'folga': 3 };
             const pesoA = pesos[infoA.status] || 4;
             const pesoB = pesos[infoB.status] || 4;
-
             if (pesoA !== pesoB) return pesoA - pesoB;
-            
-            // Se tiverem o mesmo status, desempata pelo Grupo, e depois pelo Nome
             if (a.grupo === b.grupo) return a.nome.localeCompare(b.nome);
             return a.grupo.localeCompare(b.grupo);
         }
-
         return 0;
     });
 
-    // 3. Monta as Linhas na Tabela
     funcionariosFiltrados.forEach(f => {
         const info = obterStatusDiaColaborador(f, dataSelecionadaLista);
         const tr = document.createElement('tr');
         let visual = '';
-        
-        if(info.status === 'trabalho') {
-            visual = `<span style="color:var(--dourado); font-weight:bold;">${info.detalhe}</span>`;
-        } else if(info.status === 'falta') {
-            visual = `<span style="color:var(--erro); font-weight:bold;">${info.detalhe}</span>`;
-        } else {
-            visual = `<span style="opacity:0.6;">${info.detalhe}</span>`;
-        }
+        if(info.status === 'trabalho') visual = `<span style="color:var(--dourado); font-weight:bold;">${info.detalhe}</span>`;
+        else if(info.status === 'falta') visual = `<span style="color:var(--erro); font-weight:bold;">${info.detalhe}</span>`;
+        else visual = `<span style="opacity:0.6;">${info.detalhe}</span>`;
 
         tr.innerHTML = `<td>${f.id}</td><td><strong>${f.nome}</strong></td><td>Grupo ${f.grupo}</td><td>${visual}</td>`;
         tbody.appendChild(tr);
@@ -571,11 +587,6 @@ document.getElementById('form-falta').addEventListener('submit', function(e) {
         } else alert('Falta já mapeada nesta data.');
     }
 });
-
-function exportarJSON() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appDados, null, 2));
-    const link = document.createElement('a'); link.href = dataStr; link.download = "backup_escala_segura.json"; link.click();
-}
 
 // --- EXPORTAÇÃO EXCELJS ---
 async function exportarParaExcel() {
