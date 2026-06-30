@@ -1,6 +1,6 @@
 # 🕒 EscalaApp - Gestão Inteligente de Escalas 6x1
 
-![Version](https://img.shields.io/badge/version-1.2-gold)
+![Version](https://img.shields.io/badge/version-1.5-gold)
 ![Status](https://img.shields.io/badge/status-Operacional-success)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
